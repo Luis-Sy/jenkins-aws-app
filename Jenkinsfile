@@ -1,8 +1,16 @@
 pipeline {
+	agent any
+
+	environment{
+		AWS_DOCKER_REGISTRY = '689299655078.dkr.ecr.us-east-2.amazonaws.com'
+		APP_NAME = 'tech2102_group14_final_image'
+        AWS_DEFAULT_REGION = 'us-east-2'
+    }
+
     stages {
 	
         stage('Build') {
-            agent{
+            agent {
 				docker {
 				image 'node:22.14.0-alpine'
 				reuseNode true
@@ -21,12 +29,12 @@ pipeline {
 		}
 		
 		stage('Test'){
-			agent{
+			agent {
 				docker {
-				image 'node:22.14.0-alpine'
-				reuseNode true
-            }
-        }
+					image 'node:22.14.0-alpine'
+					reuseNode true
+        	    }
+        	}
 			steps {
 				sh '''
 					test -f build/index.html
@@ -35,5 +43,48 @@ pipeline {
 			}
 		}
 
+		stage('Build Docker Image'){
+            agent {
+                docker {
+                    image 'amazon/aws-cli'
+                    reuseNode true
+                    args '-u root -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=""'
+                }
+            }
+            steps {
+				withCredentials([usernamePassword(credentialsId: 'tech2102_group14_final_userkey', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')])
+                {  
+                    sh '''
+                        amazon-linux-extras install docker
+                        docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME
+						aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_DOCKER_REGISTRY
+						docker push $AWS_DOCKER_REGISTRY/$APP_NAME:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to AWS') {
+            agent {
+                docker {
+                    image 'amazon/aws-cli'
+                    reuseNode true
+                    args '-u root --entrypoint=""'
+                }
+            }
+           
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'tech2102_group14_final_userkey', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')])
+                {  
+                    sh '''
+                        aws --version
+                        yum install jq -y
+                       
+                        LATEST_TD_REVISION=$(aws ecs register-task-definition --cli-input-json file://aws/task-definition.json | jq '.taskDefinition.revision')
+                        aws ecs update-service --cluster tech2102-group14-final-Cluster-Prod --service tech2102-group14-final-Service-Prod --task-definition tech2102-group14-final-TaskDefinition-Prod:$LATEST_TD_REVISION
+                    '''
+                }
+            }
+        }
 	}
 }
