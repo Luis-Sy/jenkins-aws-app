@@ -1,0 +1,27 @@
+{
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "family": "tech2102-group14-final-TaskDefinition-Prod",
+    "containerDefinitions": [
+        {
+            "name": "tech2102_group14_final",
+            "image": "689299655078.dkr.ecr.us-east-2.amazonaws.com/tech2102_group14_final_image:latest",
+            "portMappings": [
+                {
+                    "name": "nginx-80-tcp",
+                    "containerPort": 80,
+                    "hostPort": 80,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true
+        }
+    ],
+    "volumes": [],
+    "networkMode": "awsvpc",
+    "memory": "512",
+    "cpu": "256",
+    "executionRoleArn": "arn:aws:iam::689299655078:role/ecsTaskExecutionRole"
+}
