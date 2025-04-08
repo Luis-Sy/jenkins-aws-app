@@ -2,8 +2,8 @@ pipeline {
 	agent any
 
 	environment{
-		AWS_DOCKER_REGISTRY = '689299655078.dkr.ecr.us-east-2.amazonaws.com'
-		APP_NAME = 'tech2102_group14_final_image'
+		AWS_DOCKER_REGISTRY = '776940548530.dkr.ecr.us-east-2.amazonaws.com'
+		APP_NAME = 'jenkins-react-app'
         AWS_DEFAULT_REGION = 'us-east-2'
     }
 
@@ -81,7 +81,7 @@ pipeline {
                         yum install jq -y
                        
                         LATEST_TD_REVISION=$(aws ecs register-task-definition --cli-input-json file://aws/task-definition.json | jq '.taskDefinition.revision')
-                        aws ecs update-service --cluster tech2102-group14-final-Cluster-Prod --service tech2102-group14-final-Service-Prod --task-definition tech2102-group14-final-TaskDefinition-Prod:$LATEST_TD_REVISION
+                        aws ecs update-service --cluster tech2102-group14-final-Cluster-Prod1 --service tech2102-group14-final-Service-Prod1 --task-definition tech2102-group14-final-TaskDefinition-Prod:$LATEST_TD_REVISION
                     '''
                 }
             }
